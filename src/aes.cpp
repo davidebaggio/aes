@@ -1,7 +1,7 @@
 #include "encryptor.hpp"
 #include "decryptor.hpp"
 
-#include <fstream>
+#include <stdlib.h>
 
 int main(int argc, char **argv)
 {
@@ -18,11 +18,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	std::string aes_key = manage_key("AES_KEY");
+
 	std::string file_name = argv[2];
 	std::ifstream file(file_name);
 	if (!file)
 	{
-		std::cerr << "Could not open file!\n";
+		cout << "[ERROR]: Could not open file!\n";
 		return 1;
 	}
 	std::string f = "";
@@ -32,9 +34,9 @@ int main(int argc, char **argv)
 		f += line + "\n";
 	}
 	file.close();
-	cout << "File read\n";
+	cout << "[INFO]: File read\n";
 
-	auto expanded = AES128KeyExpansion(gen_key_128());
+	auto expanded = AES128KeyExpansion(aes_key);
 
 	if (mode == "-e")
 	{
@@ -44,13 +46,13 @@ int main(int argc, char **argv)
 		std::ofstream outfile(ofile_name);
 		if (!outfile)
 		{
-			std::cerr << "Could not open output file!\n";
+			cout << "[ERROR]: Could not open output file!\n";
 			return 1;
 		}
 		outfile << encoded;
 		outfile.close();
 
-		cout << "File encoded to " << ofile_name << "\n";
+		cout << "[INFO]: File encoded to " << ofile_name << "\n";
 	}
 	if (mode == "-d")
 	{

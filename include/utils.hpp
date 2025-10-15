@@ -3,11 +3,13 @@
 
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include "constants.hpp"
 
 using std::cout;
 
 std::string gen_key_128();
+std::string manage_key(const char *name);
 
 void print_matrix(Matrix m);
 void print_hex(const std::string &s);

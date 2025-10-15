@@ -17,6 +17,49 @@ std::string gen_key_128()
 	return "1234567890123456";
 }
 
+std::string manage_key(const char *name)
+{
+	// read from .env file
+	std::ifstream env_file(".env");
+	if (env_file)
+	{
+		std::string line;
+		while (std::getline(env_file, line))
+		{
+			if (line.find(name) != std::string::npos)
+			{
+				std::string aes_key = line.substr(line.find("=") + 1);
+				env_file.close();
+				cout << "[INFO]: Key found in .env file\n";
+				return aes_key;
+			}
+		}
+		cout << "[INFO]: Could not find key in .env file\n";
+		cout << "[INFO]: Generating new key\n";
+		std::string aes_key = gen_key_128();
+		std::ofstream env_file(".env");
+		if (env_file)
+		{
+			env_file << name << "=" << aes_key << "\n";
+			env_file.close();
+		}
+		return aes_key;
+	}
+	else
+	{
+		cout << "[INFO]: Could not read .env file\n";
+		cout << "[INFO]: Generating new key\n";
+		std::string aes_key = gen_key_128();
+		std::ofstream env_file(".env");
+		if (env_file)
+		{
+			env_file << name << "=" << aes_key << "\n";
+			env_file.close();
+		}
+		return aes_key;
+	}
+}
+
 void print_hex(const std::string &s)
 {
 	for (unsigned char c : s)
