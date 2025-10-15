@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AES Server Web UI</title>
+    <style>
+      :root {
+        --bg: #0f172a; /* slate-900 */
+        --panel: #111827; /* gray-900 */
+        --text: #e5e7eb; /* gray-200 */
+        --muted: #9ca3af; /* gray-400 */
+        --brand: #22c55e; /* green-500 */
+        --brand-2: #16a34a; /* green-600 */
+        --danger: #ef4444; /* red-500 */
+        --accent: #38bdf8; /* sky-400 */
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(
+          1200px 800px at 20% -10%,
+          #0b1220 0%,
+          var(--bg) 60%
+        );
+        color: var(--text);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+      .card {
+        width: min(900px, 92vw);
+        background: linear-gradient(180deg, #0b1220 0%, var(--panel) 40%);
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+        padding: 20px 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      h1 {
+        font-size: 22px;
+        margin: 2px 0 16px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+      }
+      .stack {
+        display: grid;
+        gap: 10px;
+      }
+      label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      input[type="text"],
+      .fake-input {
+        width: 100%;
+        background: #0b1220;
+        border: 1px solid #1f2937;
+        color: var(--text);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        outline: none;
+      }
+      .fake-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #1f2937;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .btn {
+        appearance: none;
+        border: none;
+        border-radius: 10px;
+        padding: 11px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        min-height: 40px;
+      }
+      .btn-primary {
+        background: var(--brand);
+        color: #052e16;
+        font-weight: 700;
+      }
+      .btn-primary:hover {
+        background: var(--brand-2);
+      }
+      .btn-secondary {
+        background: #0b1220;
+        color: var(--text);
+        border: 1px solid #1f2937;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .dropzone {
+        border: 1.5px dashed #334155;
+        border-radius: 14px;
+        padding: 22px;
+        text-align: center;
+        background: #0b1220;
+        display: grid;
+        gap: 8px;
+        place-items: center;
+        min-height: 120px;
+        cursor: pointer;
+      }
+      .dropzone.drag {
+        border-color: var(--accent);
+        background: #071522;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .status {
+        min-height: 24px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      progress {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      progress::-webkit-progress-bar {
+        background: #0b1220;
+      }
+      progress::-webkit-progress-value {
+        background: var(--accent);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+      }
+      .spacer {
+        height: 6px;
+      }
+      footer {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #6b7280;
+        text-align: center;
+      }
+      @media (max-width: 800px) {
+        .row,
+        .row-3 {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>AES Server Web UI</h1>
+
+      <div class="row">
+        <div class="stack">
+          <label>Server URL</label>
+          <input
+            id="baseUrl"
+            type="text"
+            value="http://localhost:9090"
+            placeholder="http://host:port"
+          />
+        </div>
+        <div class="stack">
+          <label>Operation</label>
+          <div class="actions">
+            <button class="btn btn-secondary" data-op="encrypt">Encrypt</button>
+            <button class="btn btn-secondary" data-op="decrypt">Decrypt</button>
+            <span id="opPill" class="pill"
+              >Selected: <b class="mono" id="opLabel">encrypt</b></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div id="drop" class="dropzone">
+        <div>
+          <div style="font-weight: 700">Drop a file here</div>
+          <div class="muted">or click to choose</div>
+        </div>
+        <input id="fileInput" type="file" style="display: none" />
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="row-3">
+        <div class="stack">
+          <label>Selected file</label>
+          <div id="fileName" class="fake-input">—</div>
+        </div>
+        <div class="stack">
+          <label>Save as</label>
+          <input
+            id="saveAs"
+            type="text"
+            placeholder="auto-generate from input"
+          />
+        </div>
+        <div class="stack">
+          <label>&nbsp;</label>
+          <div class="actions">
+            <button id="runBtn" class="btn btn-primary">Run</button>
+            <button id="cancelBtn" class="btn btn-danger" disabled>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="stack">
+        <label>Status</label>
+        <div id="status" class="status">Idle.</div>
+        <progress id="bar" value="0" max="100" style="display: none"></progress>
+      </div>
+
+      <footer>
+        The UI sends raw bytes to <span class="mono">/encrypt</span> or
+        <span class="mono">/decrypt</span> and downloads the raw response.
+      </footer>
+    </div>
+
+    <script>
+      (() => {
+        const drop = document.getElementById("drop");
+        const fileInput = document.getElementById("fileInput");
+        const baseUrl = document.getElementById("baseUrl");
+        const runBtn = document.getElementById("runBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const statusEl = document.getElementById("status");
+        const bar = document.getElementById("bar");
+        const fileNameEl = document.getElementById("fileName");
+        const saveAs = document.getElementById("saveAs");
+        const opLabel = document.getElementById("opLabel");
+
+        let selectedOp = "encrypt";
+        let selectedFile = null;
+        let abortCtrl = null;
+
+        // Op buttons
+        document.querySelectorAll("[data-op]")?.forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            selectedOp = btn.getAttribute("data-op");
+            opLabel.textContent = selectedOp;
+          });
+        });
+
+        // Dropzone events
+        const pick = () => fileInput.click();
+        drop.addEventListener("click", pick);
+        drop.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          drop.classList.add("drag");
+        });
+        drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+        drop.addEventListener("drop", (e) => {
+          e.preventDefault();
+          drop.classList.remove("drag");
+          const f = e.dataTransfer.files?.[0];
+          if (f) setFile(f);
+        });
+        fileInput.addEventListener("change", () => {
+          const f = fileInput.files?.[0];
+          if (f) setFile(f);
+        });
+
+        function setFile(f) {
+          selectedFile = f;
+          fileNameEl.textContent = `${f.name} (${fmtBytes(f.size)})`;
+          if (!saveAs.value) {
+            const suf = selectedOp === "encrypt" ? ".enc" : ".dec";
+            saveAs.value = suggestName(f.name, suf);
+          }
+        }
+
+        // Run
+        runBtn.addEventListener("click", async () => {
+          if (!selectedFile) {
+            alert("Pick a file first.");
+            return;
+          }
+          const url = `${baseUrl.value.replace(/\/+$/, "")}/${selectedOp}`;
+
+          abortCtrl = new AbortController();
+          cancelBtn.disabled = false;
+          runBtn.disabled = true;
+
+          statusEl.textContent = `Uploading ${selectedFile.name}…`;
+          bar.style.display = "block";
+          bar.value = 5;
+
+          try {
+            // Upload with fetch; no native progress for uploads, but we show a spinner/progress simulation.
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/octet-stream" },
+              body: selectedFile,
+              signal: abortCtrl.signal,
+            });
+
+            if (!res.ok) {
+              const text = await res.text().catch(() => "");
+              throw new Error(`${res.status} ${res.statusText}: ${text}`);
+            }
+
+            statusEl.textContent = "Downloading response…";
+            // Stream to blob
+            const blob = await res.blob();
+            const bytes = blob.size;
+
+            const outName =
+              (saveAs.value && saveAs.value.trim()) ||
+              suggestName(
+                selectedFile.name,
+                selectedOp === "encrypt" ? ".enc" : ".dec"
+              );
+            await downloadBlob(blob, outName);
+
+            statusEl.textContent = `Done. Saved ${fmtBytes(
+              bytes
+            )} to ${outName}`;
+          } catch (err) {
+            if (err.name === "AbortError") {
+              statusEl.textContent = "Cancelled.";
+            } else {
+              console.error(err);
+              statusEl.textContent = `Error: ${err.message}`;
+            }
+          } finally {
+            bar.style.display = "none";
+            bar.value = 0;
+            runBtn.disabled = false;
+            cancelBtn.disabled = true;
+            abortCtrl = null;
+          }
+        });
+
+        cancelBtn.addEventListener("click", () => {
+          if (abortCtrl) abortCtrl.abort();
+        });
+
+        function suggestName(name, suffix) {
+          if (!name) return `output${suffix}`;
+          return name + suffix;
+        }
+        function fmtBytes(n) {
+          if (n < 1024) return `${n} B`;
+          if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+          if (n < 1024 * 1024 * 1024)
+            return `${(n / 1024 / 1024).toFixed(1)} MB`;
+          return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+        }
+        function downloadBlob(blob, name) {
+          return new Promise((resolve) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+              a.remove();
+              resolve();
+            }, 0);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
