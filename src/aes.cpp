@@ -27,20 +27,22 @@ int main(int argc, char **argv)
 		cout << "[ERROR]: Could not open file!\n";
 		return 1;
 	}
-	std::string f = "";
-	std::string line;
-	while (std::getline(file, line))
-	{
-		f += line + "\n";
-	}
-	file.close();
+
+	file.seekg(0, std::ios::end);
+	size_t length = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	char buffer[length];
+	file.read(buffer, length);
+	std::string f(buffer, length);
+
 	cout << "[INFO]: File read\n";
 
 	auto expanded = AES128KeyExpansion(aes_key);
 
 	if (mode == "-e")
 	{
-		std::string encoded = encrypt(f, expanded);
+		std::string encrypted = encrypt(f, expanded);
 
 		std::string ofile_name = file_name + ".enc";
 		std::ofstream outfile(ofile_name);
@@ -49,15 +51,25 @@ int main(int argc, char **argv)
 			cout << "[ERROR]: Could not open output file!\n";
 			return 1;
 		}
-		outfile << encoded;
+		outfile << encrypted;
 		outfile.close();
 
-		cout << "[INFO]: File encoded to " << ofile_name << "\n";
+		cout << "[INFO]: File encrypted to " << ofile_name << "\n";
 	}
 	if (mode == "-d")
 	{
-		std::string decoded = decrypt(f, expanded);
-		cout << decoded << "\n";
+		std::string decrypted = decrypt(f, expanded);
+		std::string ofile_name = file_name.substr(0, file_name.length() - 4);
+		std::ofstream outfile(ofile_name);
+		if (!outfile)
+		{
+			cout << "[ERROR]: Could not open output file!\n";
+			return 1;
+		}
+		outfile << decrypted;
+		outfile.close();
+
+		cout << "[INFO]: File decrypted to " << ofile_name << "\n";
 	}
 
 	return 0;
