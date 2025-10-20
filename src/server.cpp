@@ -14,16 +14,27 @@ int main()
     const int port = 9090;
 
     std::string aes_key = manage_key("AES_KEY");
-    auto expanded = AES128KeyExpansion(aes_key);
 
     httplib::Server svr;
     svr.set_payload_max_length(100 * 1024 * 1024);
 
-    auto handle = [expanded](const httplib::Request &req, httplib::Response &res, bool do_encrypt)
+    auto handle = [aes_key](const httplib::Request &req, httplib::Response &res, bool do_encrypt)
     {
         try
         {
             const auto &body = req.body;
+            const auto &key = req.headers.find("AES-KEY");
+            std::vector<std::string> expanded;
+            if (key == req.headers.end())
+            {
+                cout << "[INFO]: request using default AES KEY\n";
+                expanded = AES128KeyExpansion(aes_key);
+            }
+            else
+            {
+                cout << "[INFO]: request using custom AES KEY\n";
+                expanded = AES128KeyExpansion(key->second);
+            }
 
             std::string out = do_encrypt ? encrypt(body, expanded) : decrypt(body, expanded);
 
