@@ -1,4 +1,3 @@
-// Single-header deps: https://github.com/yhirose/cpp-httplib (copy httplib.h here)
 // #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 #include "encryptor.hpp"
@@ -13,22 +12,21 @@ int main()
     const char *host = "0.0.0.0";
     const int port = 9090;
 
-    std::string aes_key = manage_key("AES_KEY");
-
     httplib::Server svr;
     svr.set_payload_max_length(100 * 1024 * 1024);
 
-    auto handle = [aes_key](const httplib::Request &req, httplib::Response &res, bool do_encrypt)
+    auto handle = [](const httplib::Request &req, httplib::Response &res, bool do_encrypt)
     {
         try
         {
             const auto &body = req.body;
             const auto &key = req.headers.find("AES-KEY");
             std::vector<std::string> expanded;
+
             if (key == req.headers.end())
             {
                 cout << "[INFO]: request using default AES KEY\n";
-                expanded = AES128KeyExpansion(aes_key);
+                expanded = AES128KeyExpansion(manage_key("AES_KEY"));
             }
             else
             {
